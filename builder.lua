@@ -43,7 +43,10 @@ local build do
 		ct(f,newt)
 	end
 	
-	function build()
+	function build(overwrite)
+		if rs:FindFirstChild("CatFramework") and overwrite then
+			rs.CatFramework:Destroy()
+		end
 		local frame = Instance.new("Folder",rs)
 		frame.Name = "CatFramework"
 		
@@ -57,11 +60,17 @@ local build do
 			elseif f.path == "source" then
 				local t = getTree(f.url)
 				for it = 1,#t do
-					ct(frame,t[it])
+					local cur = t[it]
+					if cur.type == "tree" then
+						ct(frame,cur)
+					elseif cur.type == "blob" then
+						local src = dec(cur.content)
+						local type = src:match("^%a+\n")
+					end
 				end
 			end
 		end
 	end
 end
 
-build(1)
+build(true)
