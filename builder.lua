@@ -1,17 +1,40 @@
-local dec do
-	local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+--[[
+	INSTRUCTIONS
+	
+	New users: To insert the cat framework into your game, copy and paste this entire script into the commandbar.
+	More in-depth instructions are given in the README file, which will be in the inserted model or on this repo.
+	
+	To update the framework (which I recommend doing periodically), copy and paste! If you wish to keep the older version
+	(for whatever reason), change the first argument for the line that calls the build() function to false. Your old version
+	will be left in ReplicatedStorage, and a new one will pop up as well.
+
+	To repair the framework (and it's on the current version), for reasons such as screwing around with stuff you should not be screwing around with, change
+	BOTH of the arguments to false. There is a simple caching system to prevent sending lots of requests in a short amount of time. The broken
+	version will also be destroyed.
+
+
+
+
+
+]]
+
+local b4 = game.HttpService.HttpEnabled
+game.HttpService.HttpEnabled = true
+
+local dec do --found this function somewhere
+	local b="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 	
 	function dec(data)
-	    data = string.gsub(data, '[^'..b..'=]', '')
-	    return (data:gsub('.', function(x)
-	        if (x == '=') then return '' end
-	        local r,f='',(b:find(x)-1)
-	        for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
+	    data = string.gsub(data,"[^"..b.."=]", "")
+	    return (data:gsub(".", function(x)
+	        if (x == "=") then return "" end
+	        local r,f="",(b:find(x)-1)
+	        for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and "1" or "0") end
 	        return r;
-	    end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
-	        if (#x ~= 8) then return '' end
+	    end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(x)
+	        if (#x ~= 8) then return "" end
 	        local c=0
-	        for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
+	        for i=1,8 do c=c+(x:sub(i,i)=="1" and 2^(8-i) or 0) end
 	        return string.char(c)
 	    end))
 	end
@@ -43,12 +66,29 @@ local build do
 		ct(f,newt)
 	end
 	
-	function build(overwrite)
-		if rs:FindFirstChild("CatFramework") and overwrite then
-			rs.CatFramework:Destroy()
+	function build(overwrite,versioncache)
+		local old = rs:FindFirstChild("CatFramework")
+		if old and versioncache then
+			local osha = old.Info.Source:match("SHA1:(%w+)")
+			if osha == data.sha then
+				warn("Version is up to date, did not overwrite current")
+				return
+			end
+		end
+		if old and overwrite then
+			old:Destroy()
 		end
 		local frame = Instance.new("Folder",rs)
 		frame.Name = "CatFramework"
+
+		local infofile = Instance.new("Script",frame)
+		infofile.Name = "Info"
+		infofile.Disabled = true
+		infofile.Source = [[
+
+			information file, do not delete this
+
+		]] .. "SHA1:"..data.sha
 		
 		for i = 1,#tree do
 			local f = tree[i]
@@ -83,7 +123,9 @@ local build do
 				end
 			end
 		end
+
+		http.HttpEnabled = b4
 	end
 end
 
-build(true)
+build(true,true) -- first arg is overwrite old version, second arg is cache the version
